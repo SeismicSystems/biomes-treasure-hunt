@@ -1,0 +1,3 @@
+[submodule "packages/biomes-scaffold"]
+	path = packages/biomes-scaffold
+	url = https://github.com/tenetxyz/biomes-scaffold.git
