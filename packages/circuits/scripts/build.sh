@@ -43,4 +43,5 @@ rm -rf CircuitVerifier.sol-e
 # # Clean up
 mkdir -p build
 mv circuit_js/circuit.wasm circuit.zkey circuit.vkey.json build/
+mv CircuitVerifier.sol ../biomes-scaffold/packages/hardhat/contracts/
 rm -r circuit_js/ circuit.r1cs

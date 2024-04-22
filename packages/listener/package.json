@@ -3,6 +3,7 @@
     "version": "1.0.0",
     "description": "",
     "scripts": {
+        "seed": "tsx seed.ts",
         "dev": "tsx server.ts"
     },
     "keywords": [],
