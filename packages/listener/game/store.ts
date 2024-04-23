@@ -25,7 +25,6 @@ export class TreasureHuntStore {
 
     addMinedPosition(position: VoxelPosition | string): void {
         const positionString = typeof position === 'string' ? position : JSON.stringify(position);
-        console.log("stringified loc: ", positionString);
         this.minedPositions.add(positionString);
     }
 

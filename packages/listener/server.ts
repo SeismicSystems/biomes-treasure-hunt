@@ -3,6 +3,7 @@ import { TreasureHuntStore } from "./game/store";
 import network from "./utils/network";
 import { CircuitInputs, VoxelPosition } from "./game/types";
 import { proveCircuit } from "./utils/prover";
+import { handleAsync } from "./utils/utils";
 
 dotenv.config({ path: "../../.env" });
 
@@ -36,7 +37,7 @@ const run = async () => {
         onLogs: async (logs) => {
             for (let log of logs) {
                 let { player, x, y, z } = log["args"];
-                
+
                 if (x < CORNERS.x || x > CORNERS.x + BOUNDS.x || y < CORNERS.y || y > CORNERS.y + BOUNDS.y || z < CORNERS.z || z > CORNERS.z + BOUNDS.z) {
                     continue;
                 }
@@ -50,7 +51,6 @@ const run = async () => {
                 if (store.isAlreadyMined(offsetCoord)) {
                     continue;
                 }
-                store.addMinedPosition(offsetCoord);
 
                 const inputs: CircuitInputs = {
                     x: offsetCoord.x.toString(),
@@ -61,11 +61,31 @@ const run = async () => {
                 }
 
                 // TODO: error handling
-                const { proof, publicSignals } = await proveCircuit(inputs);
+                // const { proof, publicSignals } = await proveCircuit(inputs);
+                let [proofRes, proofGenErr] = await handleAsync(proveCircuit(inputs));
+                if (proofRes === null || proofGenErr) {
+                    console.error("Error proving circuit", proofGenErr);
+                    continue;
+                }
+                const { proof, publicSignals } = proofRes;
 
-                console.log(`Player ${player} mined at (${x}, ${y}, ${z}), received ${publicSignals[0]} points`);
+                store.addMinedPosition(offsetCoord);
 
-                await network.contract.write.SeismicCall([player, { x, y, z }, proof, publicSignals]);
+                let [tx, contractCallErr] = await handleAsync(
+                    network.contract.write.SeismicCall([
+                        player,
+                        { x, y, z },
+                        proof,
+                        publicSignals
+                    ])
+                );
+                if (tx === null || contractCallErr) {
+                    console.error("Error calling SeismicCall()", contractCallErr);
+                    console.error("Function inputs: ", { player, position: { x, y, z }, proof, publicSignals })
+                    continue;
+                }
+
+                console.log(`== Player ${player} mined at (${x}, ${y}, ${z}), received ${publicSignals[0]} points`);
             }
         }
     });

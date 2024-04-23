@@ -1,13 +1,9 @@
 import dotenv from "dotenv";
-import { randomBytes } from "crypto";
 import { poseidon1 } from "poseidon-lite";
 import { writeFileSync } from "fs";
+import { sampleBlind } from "./utils/utils";
 
 dotenv.config({ path: "../../.env" });
-
-const sampleBlind = (): bigint => {
-    return BigInt(`0x${randomBytes(32).toString("hex")}`);
-}
 
 const init = () => {
     const seedFilePath = process.env.SEED_FILE_PATH;
