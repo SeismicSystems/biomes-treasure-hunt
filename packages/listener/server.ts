@@ -4,6 +4,7 @@ import network from "./utils/network";
 import { CircuitInputs, VoxelPosition } from "./game/types";
 import { proveCircuit } from "./utils/prover";
 import { handleAsync } from "./utils/utils";
+import { Address } from "viem";
 
 dotenv.config({ path: "../../.env" });
 
@@ -30,15 +31,60 @@ const setup = async () => {
     store = new TreasureHuntStore(SEED_FILE_PATH);
 }
 
+const onNewExtensionContract = (contractAddress: Address) => {
+    network.publicClient.watchEvent({
+        address: contractAddress,
+        event: network.events.mineEvent,
+        onLogs: async (logs) => {
+            for (let log of logs) {
+                let { player, x, y, z } = log["args"];
+                if (x === undefined || y === undefined || z === undefined) {
+                    continue;
+                }
+                onMineEvent(player as Address, { x, y, z });
+            }
+        }
+    })
+}
+
+const onMineEvent = (player: Address, position: VoxelPosition) => {
+    console.log("hehe", { player, position });
+}
+
 const run = async () => {
     await setup();
 
+    network.publicClient.watchEvent({
+        event: network.events.newExtensionEvent,
+        onLogs: async (logs) => {
+            for (let log of logs) {
+                let { contractAddress } = log["args"];
+                onNewExtensionContract(contractAddress as Address);
+            }
+        }
+    });
+
+    console.log(`== Seismic client listening to hooks contract at ${network.contract.address}`);
+}
+
+run();
+
+
+
+
+
+
+
+
+
+const oldRun = () => {
     network.contract.watchEvent.MineEvent({
         onLogs: async (logs) => {
             for (let log of logs) {
                 let { player, x, y, z } = log["args"];
 
                 if (x < CORNERS.x || x > CORNERS.x + BOUNDS.x || y < CORNERS.y || y > CORNERS.y + BOUNDS.y || z < CORNERS.z || z > CORNERS.z + BOUNDS.z) {
+                    console.log(`== Player ${player} tried to mine at (${x}, ${y}, ${z}), but it was out of bounds`);
                     continue;
                 }
 
@@ -49,6 +95,7 @@ const run = async () => {
                 }
 
                 if (store.isAlreadyMined(offsetCoord)) {
+                    console.log(`== Player ${player} tried to mine at (${x}, ${y}, ${z}), but it was already mined`);
                     continue;
                 }
 
@@ -60,11 +107,9 @@ const run = async () => {
                     seedCommitment: store.seedCommitment
                 }
 
-                // TODO: error handling
-                // const { proof, publicSignals } = await proveCircuit(inputs);
                 let [proofRes, proofGenErr] = await handleAsync(proveCircuit(inputs));
                 if (proofRes === null || proofGenErr) {
-                    console.error("Error proving circuit", proofGenErr);
+                    console.error("== Error proving circuit", proofGenErr);
                     continue;
                 }
                 const { proof, publicSignals } = proofRes;
@@ -89,8 +134,4 @@ const run = async () => {
             }
         }
     });
-
-    console.log("== Seismic client listening to hooks contract");
 }
-
-run();

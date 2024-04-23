@@ -1,7 +1,8 @@
 import dotenv from "dotenv"
-import { webSocket, createPublicClient, createWalletClient, Address, getContract, parseAbi } from "viem";
+import { webSocket, createPublicClient, createWalletClient, Address, getContract, parseAbiItem } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { abi, address, receipt } from "../../biomes-scaffold/packages/hardhat/deployments/biomesTestnet/Game.json";
+import { abi } from "../../contracts/out/SeismicNotifier.sol/SeismicNotifier.json";
+import { address } from "../../contracts/out/SeismicNotifier.sol/deployment.json";
 
 dotenv.config({ path: "../../.env" });
 
@@ -48,13 +49,19 @@ const contract = getContract({
     },
 });
 
+const newExtensionEvent = parseAbiItem("event NewExtensionsContract(address indexed contractAddress)");
+const mineEvent = parseAbiItem("event MineEvent(address player, int32 x, int32 y, int32 z)");
+
 const network = {
     account,
     chain,
     publicClient,
     walletClient,
     contract,
-    receipt,
+    events: {
+        newExtensionEvent,
+        mineEvent,
+    }
 };
 
 export default network;
