@@ -1,7 +1,6 @@
 import dotenv from "dotenv";
 import { TreasureHuntStore } from "./game/store";
 import network from "./utils/network";
-import { parseAbi } from "viem";
 
 dotenv.config({ path: "../../.env" });
 
