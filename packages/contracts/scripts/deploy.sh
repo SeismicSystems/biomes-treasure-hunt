@@ -16,4 +16,6 @@ CONTRACT_ADDR=$(awk '/Deployed to:/ {print $3}' deploy_out.txt)
 echo "{ 
     \"address\": \"$CONTRACT_ADDR\"
 }" > out/SeismicNotifier.sol/deployment.json
+
+cat deploy_out.txt
 rm deploy_out.txt
