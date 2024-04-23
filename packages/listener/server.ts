@@ -1,6 +1,8 @@
 import dotenv from "dotenv";
 import { TreasureHuntStore } from "./game/store";
 import network from "./utils/network";
+import { CircuitInputs, VoxelPosition } from "./game/types";
+import { proveCircuit } from "./utils/prover";
 
 dotenv.config({ path: "../../.env" });
 
@@ -25,8 +27,6 @@ let store: TreasureHuntStore;
 
 const setup = async () => {
     store = new TreasureHuntStore(SEED_FILE_PATH);
-    
-    // TODO: get sync to work
 }
 
 const run = async () => {
@@ -34,8 +34,39 @@ const run = async () => {
 
     network.contract.watchEvent.MineEvent({
         onLogs: async (logs) => {
-            // TODO: fill in logic
-            console.log(logs);
+            for (let log of logs) {
+                let { player, x, y, z } = log["args"];
+                
+                if (x < CORNERS.x || x > CORNERS.x + BOUNDS.x || y < CORNERS.y || y > CORNERS.y + BOUNDS.y || z < CORNERS.z || z > CORNERS.z + BOUNDS.z) {
+                    continue;
+                }
+
+                const offsetCoord: VoxelPosition = {
+                    x: x - CORNERS.x,
+                    y: y - CORNERS.y,
+                    z: z - CORNERS.z
+                }
+
+                if (store.isAlreadyMined(offsetCoord)) {
+                    continue;
+                }
+                store.addMinedPosition(offsetCoord);
+
+                const inputs: CircuitInputs = {
+                    x: offsetCoord.x.toString(),
+                    y: offsetCoord.y.toString(),
+                    z: offsetCoord.z.toString(),
+                    seed: store.seed,
+                    seedCommitment: store.seedCommitment
+                }
+
+                // TODO: error handling
+                const { proof, publicSignals } = await proveCircuit(inputs);
+
+                console.log(`Player ${player} mined at (${x}, ${y}, ${z}), received ${publicSignals[0]} points`);
+
+                await network.contract.write.SeismicCall([player, { x, y, z }, proof, publicSignals]);
+            }
         }
     });
 

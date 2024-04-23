@@ -18,8 +18,6 @@ export class TreasureHuntStore {
             const parsedData = JSON.parse(data);
             this.seed = parsedData.seed;
             this.seedCommitment = poseidon1([this.seed]).toString();
-
-            console.log({ seed: this.seed, seedCommitment: this.seedCommitment });
         } catch (err) {
             console.error(`Error reading seed from file: ${err}`);
         }

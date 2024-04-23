@@ -13,8 +13,10 @@ export type CircuitInputs = {
 }
 
 export type Groth16ProofCalldata = {
-    a: [string, string];
-    b: [[string, string], [string, string]];
-    c: [string, string];
-    input: string[];
+    proof: {
+        a: [string, string];
+        b: [[string, string], [string, string]];
+        c: [string, string];
+    },
+    publicSignals: string[];
 };
