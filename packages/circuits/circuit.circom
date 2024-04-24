@@ -32,6 +32,27 @@ template GetMod(N, N_BITS) {
     remainderUB === 1;
 }
 
+template GetRoll(N, N_BITS) {
+    signal input size;
+    signal input seed;
+    signal input gameStartBlock;
+    signal input x;
+    signal input y;
+    signal input z;
+    signal output out;
+
+    signal random <== Poseidon(5)([seed + N, gameStartBlock, x, y, z]);
+    out <-- random % size;
+    signal divisor <-- (random - out) \ size;
+    random === size * divisor + out;
+
+    signal remainderLB <== LessEqThan(N_BITS)([0, out]);
+    remainderLB === 1;
+
+    signal remainderUB <== LessThan(N_BITS)([out, size]);
+    remainderUB === 1;
+}
+
 template AbsoluteDistance(N_BITS) {
     signal input a;
     signal input b;
@@ -58,18 +79,26 @@ template Main() {
 
     signal output out;
 
-    var N_BITS = 20;
+    var N_BITS = 32;
+
+    signal adjustedSizeX <== sizeX - 2;
+    signal adjustedSizeY <== sizeY - 2;
+    signal adjustedSizeZ <== sizeZ - 2;
 
     signal seedCommitmentCorrect <== CheckSeedCommitment()(seedCommitment, seed);
     seedCommitmentCorrect === 1;
 
-    signal rewardCornerX <== GetMod(0, N_BITS)(sizeX, seed, gameStartBlock);
-    signal rewardCornerY <== GetMod(1, N_BITS)(sizeY, seed, gameStartBlock);
-    signal rewardCornerZ <== GetMod(2, N_BITS)(sizeZ, seed, gameStartBlock);
+    signal rewardCornerX <== GetMod(0, N_BITS)(adjustedSizeX, seed, gameStartBlock);
+    signal rewardCornerY <== GetMod(1, N_BITS)(adjustedSizeY, seed, gameStartBlock);
+    signal rewardCornerZ <== GetMod(2, N_BITS)(adjustedSizeZ, seed, gameStartBlock);
 
-    signal rewardSizeX <== GetMod(3, N_BITS)(sizeX - rewardCornerX, seed, gameStartBlock);
-    signal rewardSizeY <== GetMod(4, N_BITS)(sizeY - rewardCornerY, seed, gameStartBlock);
-    signal rewardSizeZ <== GetMod(5, N_BITS)(sizeZ - rewardCornerZ, seed, gameStartBlock);
+    signal preRewardSizeX <== GetMod(3, N_BITS)(adjustedSizeX - rewardCornerX, seed, gameStartBlock);
+    signal preRewardSizeY <== GetMod(4, N_BITS)(adjustedSizeY - rewardCornerY, seed, gameStartBlock);
+    signal preRewardSizeZ <== GetMod(5, N_BITS)(adjustedSizeZ - rewardCornerZ, seed, gameStartBlock);
+
+    signal rewardSizeX <== preRewardSizeX + 2;
+    signal rewardSizeY <== preRewardSizeY + 2;
+    signal rewardSizeZ <== preRewardSizeZ + 2;
 
     signal rewardCenterX <-- (rewardCornerX + (rewardCornerX + rewardSizeX)) \ 2;
     signal rewardCenterXEven <== IsEqual()([rewardCenterX * 2, rewardCornerX + (rewardCornerX + rewardSizeX)]);
@@ -116,24 +145,24 @@ template Main() {
     signal maxReward <== 
         rewardCornerX + rewardSizeX - rewardCenterX 
         + rewardCornerY + rewardSizeY - rewardCenterY 
-        + rewardCornerZ + rewardSizeZ - rewardCenterZ;
+        + rewardCornerZ + rewardSizeZ - rewardCenterZ + 1;
     log("max reward: ", maxReward);
     
     signal distX <== AbsoluteDistance(N_BITS)(x, rewardCenterX);
     signal distY <== AbsoluteDistance(N_BITS)(y, rewardCenterY);
     signal distZ <== AbsoluteDistance(N_BITS)(z, rewardCenterZ);
 
-    // out <== inRewardZone * (maxReward - (distX + distY + distZ));
-
     signal rewardPreChance <== inRewardZone * (maxReward - (distX + distY + distZ));
 
-    signal roll <== GetMod(6, N_BITS)(3, seed, gameStartBlock);
+    signal roll <== GetRoll(6, N_BITS)(3, seed, gameStartBlock, x, y, z);
     signal rollFail <== IsEqual()([roll, 0]);
     signal rollSuccess <== NOT()(rollFail);
 
     log("roll: ", roll);
 
     out <== rollSuccess * rewardPreChance;
+
+    log("reward: ", out);
 }
 
 component main { public [ seedCommitment, gameStartBlock, x, y, z, sizeX, sizeY, sizeZ ] } = Main();
