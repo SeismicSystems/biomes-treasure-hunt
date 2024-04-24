@@ -22,7 +22,7 @@ template GetMod(N, N_BITS) {
 
     signal random <== Poseidon(2)([seed + N, gameStartBlock]);
     out <-- random % size;
-    signal divisor <-- (random - out) / size;
+    signal divisor <-- (random - out) \ size;
     random === size * divisor + out;
 
     signal remainderLB <== LessEqThan(N_BITS)([0, out]);
