@@ -50,7 +50,7 @@ const contract = getContract({
 });
 
 const newExtensionEvent = parseAbiItem("event NewExtensionsContract(address indexed contractAddress)");
-const mineEvent = parseAbiItem("event MineEvent(address player, int32 x, int32 y, int32 z)");
+const mineEvent = parseAbiItem("event MineEvent(address player, int32 x, int32 y, int32 z, int32 sizeX, int32 sizeY, int32 sizeZ, uint256 gameStartBlock)");
 
 const network = {
     account,

@@ -17,10 +17,10 @@ template CheckSeedCommitment() {
 template GetMod(N, N_BITS) {
     signal input size;
     signal input seed;
-    signal input startBlockHeight;
+    signal input gameStartBlock;
     signal output out;
 
-    signal random <== Poseidon(2)([seed + N, startBlockHeight]);
+    signal random <== Poseidon(2)([seed + N, gameStartBlock]);
     out <-- random % size;
     signal divisor <-- (random - out) / size;
     random === size * divisor + out;
@@ -45,7 +45,7 @@ template AbsoluteDistance(N_BITS) {
 
 template Main() {
     signal input seedCommitment;
-    signal input startBlockHeight;
+    signal input gameStartBlock;
     // already offseted, so (0, 0, 0) is the corner of potential reward zone
     signal input x;
     signal input y;
@@ -63,13 +63,13 @@ template Main() {
     signal seedCommitmentCorrect <== CheckSeedCommitment()(seedCommitment, seed);
     seedCommitmentCorrect === 1;
 
-    signal rewardCornerX <== GetMod(0, N_BITS)(sizeX, seed, startBlockHeight);
-    signal rewardCornerY <== GetMod(1, N_BITS)(sizeY, seed, startBlockHeight);
-    signal rewardCornerZ <== GetMod(2, N_BITS)(sizeZ, seed, startBlockHeight);
+    signal rewardCornerX <== GetMod(0, N_BITS)(sizeX, seed, gameStartBlock);
+    signal rewardCornerY <== GetMod(1, N_BITS)(sizeY, seed, gameStartBlock);
+    signal rewardCornerZ <== GetMod(2, N_BITS)(sizeZ, seed, gameStartBlock);
 
-    signal rewardSizeX <== GetMod(3, N_BITS)(sizeX - rewardCornerX, seed, startBlockHeight);
-    signal rewardSizeY <== GetMod(4, N_BITS)(sizeY - rewardCornerY, seed, startBlockHeight);
-    signal rewardSizeZ <== GetMod(5, N_BITS)(sizeZ - rewardCornerZ, seed, startBlockHeight);
+    signal rewardSizeX <== GetMod(3, N_BITS)(sizeX - rewardCornerX, seed, gameStartBlock);
+    signal rewardSizeY <== GetMod(4, N_BITS)(sizeY - rewardCornerY, seed, gameStartBlock);
+    signal rewardSizeZ <== GetMod(5, N_BITS)(sizeZ - rewardCornerZ, seed, gameStartBlock);
 
     signal rewardCenterX <-- (rewardCornerX + (rewardCornerX + rewardSizeX)) \ 2;
     signal rewardCenterXEven <== IsEqual()([rewardCenterX * 2, rewardCornerX + (rewardCornerX + rewardSizeX)]);
@@ -127,7 +127,7 @@ template Main() {
 
     signal rewardPreChance <== inRewardZone * (maxReward - (distX + distY + distZ));
 
-    signal roll <== GetMod(6, N_BITS)(3, seed, startBlockHeight);
+    signal roll <== GetMod(6, N_BITS)(3, seed, gameStartBlock);
     signal rollFail <== IsEqual()([roll, 0]);
     signal rollSuccess <== NOT()(rollFail);
 
@@ -136,4 +136,4 @@ template Main() {
     out <== rollSuccess * rewardPreChance;
 }
 
-component main { public [ seedCommitment, startBlockHeight, x, y, z, sizeX, sizeY, sizeZ ] } = Main();
+component main { public [ seedCommitment, gameStartBlock, x, y, z, sizeX, sizeY, sizeZ ] } = Main();

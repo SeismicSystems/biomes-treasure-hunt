@@ -4,12 +4,22 @@ export type VoxelPosition = {
     z: number
 }
 
+export type VoxelArea = {
+    sizeX: number,
+    sizeY: number,
+    sizeZ: number
+}
+
 export type CircuitInputs = {
     x: string,
     y: string,
     z: string,
+    sizeX: string,
+    sizeY: string,
+    sizeZ: string,
     seed: string,
-    seedCommitment: string
+    seedCommitment: string,
+    gameStartBlock: string,
 }
 
 export type Groth16ProofCalldata = {
