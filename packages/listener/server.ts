@@ -92,7 +92,24 @@ const onMineEvent = async (
     );
 };
 
+const setup = async () => {
+    const logs = await network.publicClient.getLogs({
+        event: network.events.newExtensionEvent,
+        fromBlock: 0n,
+        toBlock: "latest"
+    });
+
+    for (let log of logs) {
+        let { contractAddress } = log["args"];
+        console.log("== Existing extension contract", contractAddress);
+        onNewExtensionContract(contractAddress as Address);
+    }
+}
+
 const run = async () => {
+
+    await setup();
+
     network.publicClient.watchEvent({
         event: network.events.newExtensionEvent,
         onLogs: async (logs) => {
